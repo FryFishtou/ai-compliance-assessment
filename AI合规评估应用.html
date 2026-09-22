@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 算法与生成式人工智能合规评估系统（中国法域）</title>
+<style>
+:root{
+  --bg:#0f1419; --panel:#161d26; --panel2:#1d2733; --line:#2a3644; --txt:#e6edf3; --sub:#9fb0c0;
+  --accent:#3b82f6; --accent2:#2563eb; --ok:#22c55e; --low:#eab308; --mid:#f97316; --high:#ef4444; --na:#64748b;
+  --chip:#22303f;
+}
+html[data-theme="light"]{
+  --bg:#f4f6f9; --panel:#ffffff; --panel2:#f0f3f7; --line:#d8e0ea; --txt:#1b2733; --sub:#5a6b7b;
+  --accent:#2563eb; --accent2:#1d4ed8; --ok:#16a34a; --low:#ca8a04; --mid:#ea580c; --high:#dc2626; --na:#94a3b8;
+  --chip:#e7edf4;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.6;}
+a{color:var(--accent);}
+button{font-family:inherit;cursor:pointer;}
+/* Layout */
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;}
+.topbar .logo{font-weight:700;font-size:15px;letter-spacing:.3px;}
+.topbar .logo small{display:block;font-weight:400;font-size:11px;color:var(--sub);}
+.topbar .spacer{flex:1;}
+.btn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);padding:7px 13px;border-radius:7px;font-size:13px;transition:.15s;}
+.btn:hover{border-color:var(--accent);}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn.primary:hover{background:var(--accent2);}
+.btn.danger{border-color:var(--high);color:var(--high);}
+select,.input{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:13px;font-family:inherit;}
+.wrap{display:flex;min-height:calc(100vh - 53px);}
+.side{width:220px;background:var(--panel);border-right:1px solid var(--line);padding:14px 10px;flex-shrink:0;}
+.side .navitem{padding:9px 12px;border-radius:8px;margin-bottom:4px;color:var(--sub);cursor:pointer;font-size:13.5px;display:flex;align-items:center;gap:9px;}
+.side .navitem:hover{background:var(--panel2);color:var(--txt);}
+.side .navitem.active{background:var(--accent);color:#fff;}
+.side .navitem .dot{width:7px;height:7px;border-radius:50%;background:var(--na);}
+.main{flex:1;padding:22px 28px;overflow:auto;max-width:1100px;margin:0 auto;width:100%;}
+.section{display:none;}
+.section.active{display:block;}
+h1.h{font-size:21px;margin:0 0 4px;}
+.sub{color:var(--sub);margin-bottom:18px;font-size:13px;}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:18px;}
+.card h2{margin:0 0 12px;font-size:16px;}
+.card h3{margin:18px 0 8px;font-size:14px;color:var(--accent);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+label.fld{display:block;margin-bottom:12px;}
+label.fld span{display:block;font-size:12.5px;color:var(--sub);margin-bottom:5px;}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+/* scope toggles */
+.scopegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;}
+.tog{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;}
+.tog input{width:16px;height:16px;accent-color:var(--accent);}
+.modsel{display:flex;gap:12px;flex-wrap:wrap;}
+.modcard{flex:1;min-width:230px;border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--panel2);cursor:pointer;transition:.15s;}
+.modcard.sel{border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,.25);}
+.modcard h3{margin:0 0 6px;color:var(--txt);}
+.modcard p{margin:0;font-size:12.5px;color:var(--sub);}
+/* question */
+.q{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-bottom:12px;}
+.q .qhead{display:flex;gap:10px;align-items:flex-start;}
+.q .qno{background:var(--chip);color:var(--sub);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:600;flex-shrink:0;}
+.q .qtext{font-size:14px;flex:1;}
+.q .qmeta{font-size:11.5px;color:var(--sub);margin-top:4px;}
+.q .basis{color:var(--accent);}
+.q .opts{display:flex;gap:8px;flex-wrap:wrap;margin:11px 0 6px;}
+.opt{display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;cursor:pointer;font-size:12.5px;}
+.opt input{accent-color:var(--accent);}
+.opt.chosen{border-color:var(--accent);}
+.q .fix{font-size:12.5px;background:var(--panel2);border-left:3px solid var(--mid);padding:8px 11px;border-radius:6px;margin-top:8px;color:var(--txt);}
+.q .fix b{color:var(--mid);}
+.ev{margin-top:9px;border-top:1px dashed var(--line);padding-top:9px;}
+.ev .evlist{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0;}
+.evtag{background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11.5px;display:flex;align-items:center;gap:6px;}
+.evtag a{color:var(--accent);text-decoration:none;}
+.evtag .x{color:var(--high);cursor:pointer;font-weight:700;}
+.riskpill{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;color:#fff;}
+.risk-高{background:var(--high);} .risk-中{background:var(--mid);} .risk-低{background:var(--low);} .risk-无{background:var(--ok);} .risk-NA{background:var(--na);}
+/* summary */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;}
+.kpi .n{font-size:26px;font-weight:700;}
+.kpi .l{font-size:12px;color:var(--sub);}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+table.tbl th,table.tbl td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+table.tbl th{background:var(--panel2);}
+.bar{height:8px;border-radius:5px;background:var(--panel2);overflow:hidden;display:flex;}
+.bar i{display:block;height:100%;}
+/* tracking */
+.track{display:flex;gap:10px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;}
+.track .tinfo{flex:1;}
+.track .titem{font-weight:600;}
+.track .tmeta{font-size:12px;color:var(--sub);}
+.status{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:var(--panel2);}
+.noteinput{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 9px;color:var(--txt);font-family:inherit;font-size:12.5px;margin-top:6px;}
+/* report */
+.report{background:#fff;color:#1b2733;}
+.report .rhead{text-align:center;border-bottom:2px solid #1d4ed8;padding-bottom:12px;margin-bottom:18px;}
+.report h1{font-size:22px;margin:0;}
+.report h2{font-size:17px;border-left:5px solid #1d4ed8;padding-left:10px;margin:22px 0 10px;color:#1d4ed8;}
+.report h3{font-size:14px;margin:14px 0 6px;color:#334155;}
+.report .meta{font-size:13px;color:#475569;}
+.report table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0;}
+.report th,.report td{border:1px solid #cbd5e1;padding:6px 8px;vertical-align:top;}
+.report th{background:#eef2f7;}
+.report .pill{font-size:11px;padding:1px 7px;border-radius:10px;color:#fff;font-weight:700;}
+.report .muted{color:#64748b;font-size:12px;}
+.printonly{display:none;}
+@media print{
+  body{background:#fff;}
+  .topbar,.side,.noprint{display:none !important;}
+  .main{margin:0;max-width:none;padding:0;}
+  .section{display:none !important;}
+  .section.active{display:block !important;}
+  .printonly{display:block;}
+}
+.hint{font-size:12px;color:var(--sub);background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;margin-bottom:14px;}
+.empty{color:var(--sub);text-align:center;padding:40px;font-size:13px;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-bottom:12px;}
+.legend span{display:inline-flex;align-items:center;gap:5px;}
+.lg{width:11px;height:11px;border-radius:3px;display:inline-block;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">AI 合规评估系统<small>中国法域 · 推荐算法 / 生成式AI / 大模型</small></div>
+  <div class="spacer"></div>
+  <select id="projectSel" class="input" title="选择评估项目"></select>
+  <button class="btn" id="btnNew">新建</button>
+  <button class="btn" id="btnTheme">主题</button>
+  <button class="btn primary" id="btnExportDocx">导出DOCX</button>
+  <button class="btn primary" id="btnExportPdf">导出PDF</button>
+</div>
+<div class="wrap">
+  <div class="side">
+    <div class="navitem active" data-sec="secHome"><span class="dot"></span>总览</div>
+    <div class="navitem" data-sec="secInfo"><span class="dot"></span>项目信息</div>
+    <div class="navitem" data-sec="secSetup"><span class="dot"></span>适用范围与模块</div>
+    <div class="navitem" data-sec="secQuiz"><span class="dot"></span>合规问卷</div>
+    <div class="navitem" data-sec="secRisk"><span class="dot"></span>风险评估</div>
+    <div class="navitem" data-sec="secTrack"><span class="dot"></span>整改跟踪</div>
+    <div class="navitem" data-sec="secEvidence"><span class="dot"></span>证据链</div>
+    <div class="navitem" data-sec="secReport"><span class="dot"></span>评估报告</div>
+  </div>
+  <div class="main">
+
+    <!-- 总览 -->
+    <div class="section active" id="secHome">
+      <h1 class="h">合规评估总览</h1>
+      <div class="sub">本地离线运行 · 数据持久化于浏览器（IndexedDB）· 无需联网与后端</div>
+      <div class="card">
+        <h2>当前项目风险快照</h2>
+        <div class="kpis" id="homeKpis"></div>
+        <div class="legend" style="margin-top:14px;">
+          <span><i class="lg" style="background:var(--high)"></i>高风险</span>
+          <span><i class="lg" style="background:var(--mid)"></i>中风险</span>
+          <span><i class="lg" style="background:var(--low)"></i>低风险</span>
+          <span><i class="lg" style="background:var(--ok)"></i>合规</span>
+          <span><i class="lg" style="background:var(--na)"></i>不适用</span>
+        </div>
+        <div class="hint">建议流程：① 填写项目信息 → ② 设定适用范围与评估模块 → ③ 逐项完成合规问卷并上传证据材料 → ④ 查看风险评估并生成整改跟踪项 → ⑤ 导出 PDF / DOCX 报告。</div>
+        <div class="row">
+          <button class="btn primary" data-go="secInfo">开始评估</button>
+          <button class="btn" data-go="secReport">查看报告</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>评估依据（解析自上传资料）</h2>
+        <p style="font-size:13px;color:var(--sub);margin:0;">本系统题库依据以下法规与文件构建：《互联网信息服务算法推荐管理规定》《互联网信息服务深度合成管理规定》《生成式人工智能服务管理暂行办法》《生成式人工智能服务安全基本要求》（TC260-003）、《人工智能生成合成内容标识办法》及 GB 45438-2025、GB/T 45652-2025、GB/T 45654-2025、GB/T 45674-2025 等国家标准，以及用户提供的深度合成/算法推荐/Gen AI 合规自查清单与专项分析文档。</p>
+      </div>
+    </div>
+
+    <!-- 项目信息 -->
+    <div class="section" id="secInfo">
+      <h1 class="h">项目信息</h1>
+      <div class="sub">用于报告抬头与证据链归属</div>
+      <div class="card">
+        <div class="grid2">
+          <label class="fld"><span>评估项目名称 *</span><input class="input" id="i_name" style="width:100%"></label>
+          <label class="fld"><span>评估主体（公司/组织）</span><input class="input" id="i_org" style="width:100%"></label>
+          <label class="fld"><span>产品/服务名称</span><input class="input" id="i_product" style="width:100%"></label>
+          <label class="fld"><span>评估负责人</span><input class="input" id="i_assessor" style="width:100%"></label>
+          <label class="fld"><span>评估日期</span><input class="input" id="i_date" type="date" style="width:100%"></label>
+          <label class="fld"><span>业务描述</span><input class="input" id="i_desc" style="width:100%"></label>
+        </div>
+        <button class="btn primary" id="btnSaveInfo">保存信息</button>
+      </div>
+    </div>
+
+    <!-- 适用范围 -->
+    <div class="section" id="secSetup">
+      <h1 class="h">适用范围与评估模块</h1>
+      <div class="sub">选择评估模块并勾选产品适用场景，系统将据此动态呈现适用的合规问题（条件触发）</div>
+      <div class="card">
+        <h2>① 选择评估模块</h2>
+        <div class="modsel" id="modSel"></div>
+      </div>
+      <div class="card">
+        <h2>② 产品适用场景（决定条件性问题是否适用）</h2>
+        <div class="scopegrid" id="scopeGrid"></div>
+        <div class="row" style="margin-top:14px;">
+          <button class="btn primary" id="btnSaveSetup">保存并刷新问卷</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 问卷 -->
+    <div class="section" id="secQuiz">
+      <h1 class="h">合规问卷</h1>
+      <div class="sub">按模块逐项自评；对每项上传证明材料形成证据链。风险等级随作答实时计算。</div>
+      <div class="card">
+        <label class="fld" style="margin:0;"><span>筛选模块</span>
+          <select id="quizMod" class="input"></select>
+        </label>
+      </div>
+      <div id="quizArea"></div>
+    </div>
+
+    <!-- 风险评估 -->
+    <div class="section" id="secRisk">
+      <h1 class="h">风险评估</h1>
+      <div class="sub">系统自动识别风险项并定位法规依据</div>
+      <div class="card">
+        <div class="kpis" id="riskKpis"></div>
+      </div>
+      <div class="card">
+        <h2>各模块风险分布</h2>
+        <div id="riskBars"></div>
+      </div>
+      <div class="card">
+        <h2>风险项明细（高/中/低）</h2>
+        <div id="riskList"></div>
+        <div class="row" style="margin-top:12px;">
+          <button class="btn primary" id="btnGenTrack">生成整改跟踪项</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 整改跟踪 -->
+    <div class="section" id="secTrack">
+      <h1 class="h">整改跟踪</h1>
+      <div class="sub">对识别出的风险项建立整改计划，跟踪状态、责任人与时限（本地持久化）</div>
+      <div id="trackArea"></div>
+      <div class="empty" id="trackEmpty">暂无跟踪项。请先在「风险评估」中点击「生成整改跟踪项」。</div>
+    </div>
+
+    <!-- 证据链 -->
+    <div class="section" id="secEvidence">
+      <h1 class="h">证据链</h1>
+      <div class="sub">评估过程与上传材料形成完整证据链条，可逐个下载核验</div>
+      <div id="evArea"></div>
+    </div>
+
+    <!-- 报告 -->
+    <div class="section" id="secReport">
+      <h1 class="h">评估报告</h1>
+      <div class="sub">基于当前评估状态生成；可打印为 PDF 或导出为可编辑 DOCX</div>
+      <div class="card noprint">
+        <div class="row">
+          <button class="btn primary" id="btnBuildReport">生成/刷新报告预览</button>
+          <span class="muted" style="font-size:12px;color:var(--sub)">提示：导出 PDF 将调用浏览器打印（选择「另存为 PDF」）。</span>
+        </div>
+      </div>
+      <div id="reportView"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 报告打印容器（独立，避免受主题影响） -->
+<div id="printMount"></div>
+
+<script>
+/* ============================ 题库数据（解析自上传文件） ============================ */
+const ANS = [
+  {label:"已建立并有效执行", risk:"无", score:0},
+  {label:"已建立但执行不充分", risk:"中", score:2},
+  {label:"未建立 / 未执行", risk:"高", score:4},
+  {label:"不适用", risk:"NA", score:0, skip:true}
+];
+const MODULES = {
+  A:{
+    name:"推荐算法合规", icon:"⚙",
+    desc:"依据《互联网信息服务算法推荐管理规定》及 App 个人信息收集合规要求，覆盖信息服务合规、用户权益保护、业务管理（备案/评估）。",
+    categories:[
+      {id:"A1",name:"信息服务合规",items:[
+        {id:"A01",t:"算法推荐服务是否坚持主流价值导向，积极传播正能量，促进算法应用向上向善？",basis:"算法推荐管理规定 第4、5条",fix:"建立算法价值观审核机制，将主流价值导向纳入算法目标函数与人工干预策略。"},
+        {id:"A02",t:"是否利用算法推荐服务从事危害国家安全、扰乱经济秩序、侵犯他人合法权益等禁止活动？",basis:"算法推荐管理规定 第6条",fix:"开展业务合规审查，在算法策略中设置禁止性行为红线与监测。"},
+        {id:"A03",t:"是否利用算法推荐服务传播法律法规、规章禁止的信息？",basis:"算法推荐管理规定 第6条",fix:"建立违法信息特征库，对推荐内容实施实时过滤与处置。"},
+        {id:"A04",t:"是否采取措施防范和抵制传播不良信息？",basis:"算法推荐管理规定 第6条",fix:"制定不良信息防范抵制策略，配置人工干预与负反馈机制。"},
+        {id:"A05",t:"是否建立健全算法机制机理审核、科技伦理审查、用户注册、信息发布审核、数据安全、个人信息保护、反电信网络诈骗、安全评估监测、应急处置等管理制度和技术措施？",basis:"算法推荐管理规定 第7条；深度合成规定 第7条",fix:"补齐八项管理制度文本与技术保障措施，明确责任部门。"},
+        {id:"A06",t:"是否制定和公开算法推荐服务相关规则？",basis:"算法推荐管理规定 第7条",fix:"制定并公开《算法推荐服务规则》与平台公约。"},
+        {id:"A07",t:"是否配备与算法推荐服务规模相适应的专业人员和技术支撑？",basis:"算法推荐管理规定 第7条",fix:"配置算法安全专职岗位与算力/日志等技术支撑。"},
+        {id:"A08",t:"是否定期审核、评估、验证算法机制机理、模型、数据和应用结果？",basis:"算法推荐管理规定 第8条；深度合成规定 第15条",fix:"建立定期算法审计与评估机制（含第三方评估）。"},
+        {id:"A09",t:"是否设置诱导用户沉迷、过度消费等违背伦理道德的算法模型？",basis:"算法推荐管理规定 第8条",fix:"排查并下线诱导沉迷/过度消费类策略，开展伦理审查。"},
+        {id:"A10",t:"是否建立健全用于识别违法和不良信息的特征库，完善入库标准、规则和程序？",basis:"算法推荐管理规定 第9条；深度合成规定 第10条",fix:"建设并维护特征库，记录入库标准与日志。"},
+        {id:"A11",t:"发现未作显著标识的算法生成合成信息的，是否作出显著标识后方可继续传输？",basis:"算法推荐管理规定 第9条",fix:"在分发链路增加生成合成内容显著标识校验环节。"},
+        {id:"A12",t:"是否加强用户模型和用户标签管理，完善兴趣点规则与用户标签管理规则？",basis:"算法推荐管理规定 第10条",fix:"建立用户标签治理规则，防止标签滥用。"},
+        {id:"A13",t:"是否将违法和不良信息关键词记入用户模型的兴趣点或作为用户标签并据以推送？",basis:"算法推荐管理规定 第10条",fix:"禁止将违法不良关键词写入用户画像，增加校验。"},
+        {id:"A14",t:"是否对算法推荐服务版面页面生态管理，建立完善人工干预和用户自主选择机制？",basis:"算法推荐管理规定 第11条",fix:"在重点页面提供人工干预入口与用户自主选择开关。"},
+        {id:"A15",t:"是否在首页首屏、热搜、精选、榜单、弹窗等重点环节积极呈现符合主流价值导向的信息？",basis:"算法推荐管理规定 第11条",fix:"配置重点环节主流价值内容池与加权策略。"},
+        {id:"A16",t:"提供互联网新闻信息服务的，是否依法取得互联网新闻信息服务许可并规范采编、转载？",basis:"算法推荐管理规定 第12条",cond:{news:true},fix:"取得新闻信息服务许可；规范转载稿源并标识。"},
+        {id:"A17",t:"提供互联网新闻信息服务的，是否生成合成虚假新闻信息？",basis:"算法推荐管理规定 第12条",cond:{news:true},fix:"禁止生成合成虚假新闻；建立新闻事实核验。"},
+        {id:"A18",t:"是否存在利用算法虚假注册账号、非法交易账号、操纵用户账号或虚假点赞、评论、转发？",basis:"算法推荐管理规定 第13条",fix:"加强账号真实性与异常行为监测，杜绝刷量操纵。"},
+        {id:"A19",t:"是否存在利用算法屏蔽信息、过度推荐、操纵榜单或检索排序、控制热搜以影响舆论或规避监管？",basis:"算法推荐管理规定 第13条",fix:"规范排序与热搜机制，保留可解释记录接受监管。"},
+        {id:"A20",t:"是否妨碍、破坏合法提供的互联网信息服务正常运行，实施垄断和不正当竞争行为？",basis:"算法推荐管理规定 第13条",fix:"开展反垄断与不正当竞争合规自查。"}
+      ]},
+      {id:"A2",name:"用户权益保护合规",items:[
+        {id:"A21",t:"是否以显著方式告知用户其提供算法推荐服务的情况？",basis:"算法推荐管理规定 第16条",fix:"在服务协议中显著告知算法推荐使用情况。"},
+        {id:"A22",t:"是否以适当方式公示算法推荐服务的基本原理、目的意图和主要运行机制？",basis:"算法推荐管理规定 第16条；生成式AI暂行办法 第4条",fix:"发布算法原理说明页，提升透明度。"},
+        {id:"A23",t:"是否向用户提供选择或者删除用于算法推荐服务的针对其个人特征的用户标签的功能？",basis:"算法推荐管理规定 第17条",fix:"提供用户标签查看、关闭与删除功能。"},
+        {id:"A24",t:"如向未成年人提供服务，是否履行未成年人网络保护义务并通过适合模式便利其获取有益信息？",basis:"算法推荐管理规定 第18条",cond:{minors:true},fix:"上线未成年人模式，限制不当内容推荐。"},
+        {id:"A25",t:"如向未成年人提供服务，是否向其推送可能引发模仿不安全行为、诱导不良嗜好或诱导沉迷的信息？",basis:"算法推荐管理规定 第18条",cond:{minors:true},fix:"建立未成年人内容白名单与沉迷防控。"},
+        {id:"A26",t:"如向老年人提供服务，是否按照国家有关规定提供智能化适老服务？",basis:"算法推荐管理规定 第19条",cond:{elderly:true},fix:"提供适老化界面与大字模式。"},
+        {id:"A27",t:"如向老年人提供服务，是否依法开展涉电信网络诈骗信息的监测、识别和处置？",basis:"算法推荐管理规定 第19条",cond:{elderly:true},fix:"增加涉诈内容识别模型与提醒。"},
+        {id:"A28",t:"如向劳动者提供工作调度服务，是否保护其取得劳动报酬、休息休假等合法权益？",basis:"算法推荐管理规定 第20条",cond:{workers:true},fix:"算法派单规则纳入休息与报酬保护。"},
+        {id:"A29",t:"如向劳动者提供工作调度服务，是否建立完善平台订单分配、报酬构成及支付、工作时间、奖惩等算法？",basis:"算法推荐管理规定 第20条",cond:{workers:true},fix:"公开并优化调度算法，保障公平性。"},
+        {id:"A30",t:"如向消费者销售商品或提供服务，是否存在利用算法在交易价格等交易条件上实施不合理差别待遇（大数据杀熟）？",basis:"算法推荐管理规定 第21条",cond:{consumers:true},fix:"禁止差异化定价，开展价格算法合规审计。"},
+        {id:"A31",t:"是否设置便捷有效的用户申诉和公众投诉、举报入口？",basis:"算法推荐管理规定 第22条；深度合成规定 第12条",fix:"提供申诉/投诉/举报入口并公示。"},
+        {id:"A32",t:"是否明确申诉、投诉、举报处理流程和反馈时限，及时受理、处理并反馈结果？",basis:"算法推荐管理规定 第22条",fix:"建立处理 SLA 与反馈机制。"}
+      ]},
+      {id:"A3",name:"业务管理合规（备案/评估）",items:[
+        {id:"A33",t:"具有舆论属性或社会动员能力的，是否在提供服务之日起十个工作日内履行算法备案手续？",basis:"算法推荐管理规定 第24条",cond:{opinion:true},fix:"通过算法备案系统提交备案（名称、形式、领域、类型、自评估报告、公示内容）。"},
+        {id:"A34",t:"备案信息发生变更的，是否在变更之日起十个工作日内办理变更手续？",basis:"算法推荐管理规定 第24条",cond:{opinion:true},fix:"建立备案变更触发机制。"},
+        {id:"A35",t:"终止服务的，是否在终止之日起二十个工作日内办理注销备案并妥善安排？",basis:"算法推荐管理规定 第24条",cond:{opinion:true},fix:"制定终止服务备案注销流程。"},
+        {id:"A36",t:"完成备案后，是否在对外提供服务的网站、应用程序显著位置标明备案编号并提供公示信息链接？",basis:"算法推荐管理规定 第25条",cond:{opinion:true},fix:"在显著位置展示备案编号与公示链接。"},
+        {id:"A37",t:"具有舆论属性或社会动员能力的，是否按照国家规定定期开展安全评估？",basis:"算法推荐管理规定 第26条；生成式AI暂行办法 第17条",cond:{opinion:true},fix:"定期（上线前及重大变更）开展安全评估并提交报告。"},
+        {id:"A38",t:"是否依法保存网络日志？",basis:"算法推荐管理规定 第26条",fix:"配置日志留存（不少于6个月）与审计。"}
+      ]}
+    ]
+  },
+  B:{
+    name:"生成式人工智能（AIGC）合规", icon:"✨",
+    desc:"依据《生成式人工智能服务管理暂行办法》、安全基本要求、深度合成规定、标识办法及 GB 45438/45652/45674，覆盖数据与语料、个人信息、内容安全、标识、主体责任、知识产权、透明与伦理。",
+    categories:[
+      {id:"B1",name:"数据与语料合规",items:[
+        {id:"B01",t:"是否使用具有合法来源的数据和基础模型开展预训练、优化训练？",basis:"生成式AI暂行办法 第7条；安全基本要求 5.1",fix:"建立数据/基础模型来源合法性审查与台账。"},
+        {id:"B02",t:"是否采取有效措施提高训练数据质量，增强真实性、准确性、客观性、多样性？",basis:"生成式AI暂行办法 第7条",fix:"制定数据质量标准与预处理操作指引。"},
+        {id:"B03",t:"数据爬取活动是否识别法律风险并制定合规手册（含 Robots 协议、反爬、频率、授权）？",basis:"生成式AI暂行办法 第7条；安全基本要求 5.1c",fix:"编制数据爬取合规手册与检查清单。"},
+        {id:"B04",t:"是否建立数据源合法性审查机制并与数据提供方签署数据处理协议（DPA）？",basis:"生成式AI暂行办法 第7条",fix:"建立数据源尽调与 DPA 模板。"},
+        {id:"B05",t:"语料来源安全评估中，含违法不良信息超过5%的语料来源是否不予采集/使用？",basis:"安全基本要求 5.1a",fix:"对来源语料做安全评估，超阈值即禁用。"},
+        {id:"B06",t:"语料来源是否可追溯（开源许可/自采记录/商业合同/使用者授权）？",basis:"安全基本要求 5.1c",fix:"留存来源凭证与授权记录。"},
+        {id:"B07",t:"是否采取关键词、分类模型、人工抽检等方式充分过滤语料中的违法不良信息？",basis:"安全基本要求 5.2a",fix:"建设语料过滤流水线并留存记录。"}
+      ]},
+      {id:"B2",name:"个人信息保护",items:[
+        {id:"B08",t:"使用包含个人信息的语料前，是否取得个人同意或符合法定其他情形？",basis:"安全基本要求 5.2c；PIPL 第13条",fix:"取得合法性基础或依 PIPL 其他情形处理。"},
+        {id:"B09",t:"使用包含敏感个人信息的语料前，是否取得单独同意或符合法定其他情形？",basis:"安全基本要求 5.2c；PIPL 第29条",cond:{personalinfo:true},fix:"就敏感个人信息取得单独同意。"},
+        {id:"B10",t:"是否履行透明性要求并告知个人信息处理规则、取得合法性基础（含未成年人专门规则）？",basis:"生成式AI暂行办法 第11条；PIPL 第7、17条",cond:{personalinfo:true},fix:"完善隐私政策与告知文本，制定未成年人规则。"},
+        {id:"B11",t:"是否遵循最小必要原则，不非法留存可识别使用者身份的输入信息和使用记录，保存期限为最短时间？",basis:"生成式AI暂行办法 第11条；PIPL 第19条",cond:{personalinfo:true},fix:"限制留存范围与期限，默认不留存身份信息。"},
+        {id:"B12",t:"个人信息共享前是否具备合法性基础并签订数据处理协议，明确各方关系与责任？",basis:"生成式AI暂行办法 第11条；PIPL 第20-23条",cond:{personalinfo:true},fix:"建立第三方数据合规规范与 DPA。"},
+        {id:"B13",t:"是否开展个人信息保护影响评估（PIPIA）并留存报告？",basis:"生成式AI暂行办法 第11条；PIPL 第55条",cond:{personalinfo:true},fix:"对高风险处理活动开展 PIPIA 并存档3年。"},
+        {id:"B14",t:"是否建立个人信息主体行权响应机制（查询、复制、更正、删除等）？",basis:"生成式AI暂行办法 第11条；PIPL 第44-50条",cond:{personalinfo:true},fix:"提供行权渠道与响应 SLA。"},
+        {id:"B15",t:"涉及个人信息/数据出境的，是否履行出境机制（安全评估/标准合同/认证）并取得单独同意？",basis:"生成式AI暂行办法 第20条；PIPL 第38-39条",cond:{crossborder:true},fix:"识别出境场景，办理评估/合同/认证并告知。"}
+      ]},
+      {id:"B3",name:"内容安全",items:[
+        {id:"B16",t:"是否履行网络信息内容生产者责任，不生成违法信息并防范不良信息？",basis:"生成式AI暂行办法 第9、14条",fix:"建立内容安全策略与输入/输出双审。"},
+        {id:"B17",t:"是否建立技术或人工内容审核机制、违法不良信息特征库并留存网络日志？",basis:"生成式AI暂行办法 第14条；深度合成规定 第10条",fix:"建设审核机制与特征库，留存日志。"},
+        {id:"B18",t:"发现违法内容是否及时停止生成/传输/消除，采取模型优化整改并报告主管部门？",basis:"生成式AI暂行办法 第14条",fix:"建立违法内容处置与上报流程。"},
+        {id:"B19",t:"发现使用者利用服务从事违法活动的，是否依法依约警示、限制、暂停或终止服务并报告？",basis:"生成式AI暂行办法 第14条",fix:"建立使用者违规处置与记录机制。"},
+        {id:"B20",t:"是否建立健全投诉、举报机制，设置便捷入口并公布处理流程与反馈时限？",basis:"生成式AI暂行办法 第15条；深度合成规定 第12条",fix:"上线投诉举报入口与 SLA。"}
+      ]},
+      {id:"B4",name:"生成合成内容标识",items:[
+        {id:"B21",t:"是否在生成合成内容的文件元数据中添加隐式标识（属性、提供者编码、内容编号等）？",basis:"生成式AI暂行办法 第12条；标识办法；GB 45438-2025",fix:"按 GB 45438-2025 实现元数据隐式标识。"},
+        {id:"B22",t:"对符合深度合成规定第17条情形的，是否在合理位置、区域对生成内容进行显著（显式）标识？",basis:"生成式AI暂行办法 第12条；深度合成规定 第16、17条",fix:"对文本/语音/人脸/场景等实现显式标识。"},
+        {id:"B23",t:"提供生成内容下载、复制、导出功能时，是否确保文件含有满足要求的显式标识？",basis:"标识办法；GB 45438-2025",fix:"在导出链路强制保留显式标识。"},
+        {id:"B24",t:"是否制定内部生成内容标识规则并依法依规进行标识？",basis:"标识办法；GB 45438-2025",fix:"发布标识实施细则与校验。"}
+      ]},
+      {id:"B5",name:"主体责任与用户管理",items:[
+        {id:"B25",t:"是否落实信息安全主体责任，建立用户注册、算法审核、科技伦理审查、信息审核、数据安全、个人信息保护、反诈、应急处置等管理制度？",basis:"生成式AI暂行办法 第15条；深度合成规定 第7条",fix:"健全信息安全管理制度体系。"},
+        {id:"B26",t:"是否建立健全辟谣机制，发现虚假信息及时辟谣、记录并报告？",basis:"深度合成规定 第11条",fix:"建立辟谣流程与上报。"},
+        {id:"B27",t:"是否落实真实身份信息认证（后台实名、前台自愿）？",basis:"生成式AI暂行办法 第9条；深度合成规定 第9条",fix:"落实实名认证，未认证不提供信息发布。"},
+        {id:"B28",t:"是否明确并公开服务适用人群、场合、用途，防范未成年人过度依赖或沉迷？",basis:"生成式AI暂行办法 第10条",fix:"公开适用规则并设防沉迷措施。"},
+        {id:"B29",t:"是否与使用者签订服务协议，明确双方权利义务？",basis:"生成式AI暂行办法 第9条",fix:"完善服务协议条款。"},
+        {id:"B30",t:"是否依法取得相关行政许可/备案（ICP、公安联网备案、网络文化/视听等）？",basis:"生成式AI暂行办法 第23条；电信条例 第7条",fix:"梳理所需许可并补齐（ICP/公安备案等）。"}
+      ]},
+      {id:"B6",name:"知识产权、透明与伦理",items:[
+        {id:"B31",t:"是否采取措施防止民族、信仰、国别、地域、性别、年龄、职业、健康等歧视？",basis:"生成式AI暂行办法 第4条",fix:"在数据与模型中引入公平性考量与评测。"},
+        {id:"B32",t:"是否避免未经授权作品训练，并建立“标注+退出”/“合理使用”论证与侵权响应机制？",basis:"生成式AI暂行办法 第7条；著作权法 第24条",fix:"建立著作权授权/标注退出/侵权响应机制。"},
+        {id:"B33",t:"是否通过用户协议约定输入/输出内容的权利安排与使用限制？",basis:"生成式AI暂行办法 第7条",fix:"在用户协议中明确权利与限制。"},
+        {id:"B34",t:"是否公示算法基本原理、目的意图、主要运行机制以提升透明度？",basis:"生成式AI暂行办法 第4条；算法推荐规定 第16条",fix:"发布算法透明度说明。"},
+        {id:"B35",t:"是否部署科技伦理审查制度（含伦理审查办法要求）？",basis:"科技进步法；科技伦理审查办法（试行）；深度合成规定 第7条",fix:"设立伦理审查委员会与流程。"},
+        {id:"B36",t:"是否利用算法、数据、平台优势实施垄断或不正当竞争？",basis:"生成式AI暂行办法 第4条",fix:"开展反垄断/不正当竞争合规。"},
+        {id:"B37",t:"使用或对外提供开源模型的，是否管控开源许可风险（传染性、二次开源、兼容）？",basis:"生成式AI暂行办法 第7条",cond:{openSource:true},fix:"建立开源治理体系与许可审查。"}
+      ]},
+      {id:"B7",name:"深度合成专项",items:[
+        {id:"B38",t:"提供人脸、人声等生物识别信息编辑功能的，是否提示使用者告知被编辑个人并取得其单独同意？",basis:"深度合成规定 第14条",cond:{biometric:true},fix:"在编辑流程增加单独同意与告知。"},
+        {id:"B39",t:"是否定期审核、评估、验证生成合成类算法机制机理，并就特定功能开展安全评估？",basis:"深度合成规定 第15、20条",cond:{deepsync:true},fix:"建立合成类算法定期评估与安全评估。"},
+        {id:"B40",t:"具有舆论属性或社会动员能力的深度合成服务，是否履行算法备案及变更/注销手续并公示编号？",basis:"深度合成规定 第19条；算法推荐规定",cond:{deepsync:true,opinion:true},fix:"完成深度合成算法备案与公示。"},
+        {id:"B41",t:"应用程序分发平台是否核验深度合成类应用的安全评估、备案情况并实施上架管理？",basis:"深度合成规定 第13条",cond:{deepsync:true},fix:"（分发平台）建立上架审核与处置。"}
+      ]}
+    ]
+  },
+  C:{
+    name:"大模型合规与备案", icon:"🧠",
+    desc:"依据大模型备案/登记要求、安全基本要求（语料/模型/安全措施/安全评估）、GB/T 45652/45654/45674 与应急响应指南，覆盖备案登记、安全评估、模型与语料安全、应急措施。",
+    categories:[
+      {id:"C1",name:"备案与登记",items:[
+        {id:"C01",t:"提供/接入大模型服务的，是否向属地省网信部门开展大模型备案或登记？",basis:"生成式AI暂行办法 第17条；各地监管实践",cond:{llm:true},fix:"准备备案材料（含安全评估）向属地网信部门备案/登记。"},
+        {id:"C02",t:"是否按照 GB/T 45654-2025《生成式人工智能服务安全基本要求》开展安全评估？",basis:"生成式AI暂行办法 第17条；GB/T 45654-2025",cond:{llm:true},fix:"依 GB/T 45654 开展安全评估并提交报告。"},
+        {id:"C03",t:"具有舆论属性或社会动员能力的，是否按算法推荐规定履行算法备案及变更/注销手续？",basis:"生成式AI暂行办法 第17条；算法推荐规定 第24-26条",cond:{llm:true,opinion:true},fix:"完成算法备案并公示编号。"},
+        {id:"C04",t:"上线前是否自行开展具有舆论属性或社会动员能力的安全评估并向网信、公安提交报告？",basis:"生成式AI暂行办法 第17条；安全评估规定 第3、5、7条",cond:{llm:true,opinion:true},fix:"上线前提交安全评估报告至全国互联网安全管理服务平台。"},
+        {id:"C05",t:"完成备案后是否在显著位置标明备案/登记编号并提供公示链接？",basis:"算法推荐规定 第25条；深度合成规定 第19条",cond:{llm:true,opinion:true},fix:"展示备案编号与公示链接。"}
+      ]},
+      {id:"C2",name:"语料与模型安全",items:[
+        {id:"C06",t:"语料来源安全评估是否执行（超5%违法不良即不采/不用），且来源可追溯？",basis:"安全基本要求 5.1；GB/T 45652-2025",cond:{llm:true},fix:"建立语料来源评估与凭证留存。"},
+        {id:"C07",t:"是否对训练/优化训练数据开展内容过滤与知识产权、个人信息风险识别？",basis:"安全基本要求 5.2；GB/T 45652-2025",cond:{llm:true},fix:"建设数据过滤与风险识别流水线。"},
+        {id:"C08",t:"是否制定清晰、具体、可操作的数据标注规则并开展质量评估与人员培训？",basis:"生成式AI暂行办法 第8条；GB/T 45674-2025",cond:{llm:true},fix:"依 GB/T 45674 建立标注制度与培训考核。"},
+        {id:"C09",t:"模型训练/微调过程是否防范数据投毒、后门等安全风险？",basis:"安全基本要求 第6章；GB/T 45654-2025",cond:{llm:true},fix:"建立模型供应链与训练安全控制。"}
+      ]},
+      {id:"C3",name:"安全措施与安全评估",items:[
+        {id:"C10",t:"是否建立关键词库、生成内容测试题库、拒答测试题库与分类模型？",basis:"安全基本要求 第8章",cond:{llm:true},fix:"建设四项安全措施并持续更新。"},
+        {id:"C11",t:"语料安全评估抽样合格率是否达到规定标准（不含附录A安全风险）？",basis:"安全基本要求 9.2",cond:{llm:true},fix:"开展抽样评估，提升合格率至合规线。"},
+        {id:"C12",t:"是否开展生成内容安全评估与问题拒答评估？",basis:"安全基本要求 9.3、9.4",cond:{llm:true},fix:"执行生成内容/拒答评测并留档。"},
+        {id:"C13",t:"上线前是否开展红队/对抗测试以发现模型漏洞？",basis:"安全基本要求 第9章；GB/T 45654-2025",cond:{llm:true},fix:"组织红队测试并形成报告。"},
+        {id:"C14",t:"是否留存安全评估材料并可对训练数据来源、规模、类型、标注规则、算法机理予以说明？",basis:"生成式AI暂行办法 第19条",cond:{llm:true},fix:"建立评估档案与配合检查说明能力。"}
+      ]},
+      {id:"C4",name:"应急与持续合规",items:[
+        {id:"C15",t:"是否制定生成式人工智能服务安全应急预案（数据/内容安全事件）？",basis:"生成式AI暂行办法 第20条；应急响应指南",cond:{llm:true},fix:"编制应急预案并定期演练。"},
+        {id:"C16",t:"模型重大迭代/版本更新是否重新开展安全评估并履行变更手续？",basis:"生成式AI暂行办法 第17条；安全基本要求 9.1",cond:{llm:true},fix:"建立版本变更重评估机制。"},
+        {id:"C17",t:"是否依法保存网络日志并配合主管部门监督检查？",basis:"生成式AI暂行办法 第19条",cond:{llm:true},fix:"配置日志留存与配合检查流程。"}
+      ]}
+    ]
+  }
+};
+
+const SCOPE_DEFS = [
+  {k:"public",label:"向境内公众提供生成式AI/算法服务"},
+  {k:"opinion",label:"服务具有舆论属性或社会动员能力"},
+  {k:"minors",label:"向未成年人提供"},
+  {k:"elderly",label:"向老年人提供"},
+  {k:"workers",label:"向劳动者提供工作调度服务"},
+  {k:"consumers",label:"向消费者销售商品/服务"},
+  {k:"news",label:"提供互联网新闻信息服务"},
+  {k:"deepsync",label:"提供深度合成服务"},
+  {k:"biometric",label:"提供人脸/人声等生物识别编辑"},
+  {k:"personalinfo",label:"处理个人信息"},
+  {k:"crossborder",label:"涉及个人信息/数据出境"},
+  {k:"openSource",label:"使用或对外提供开源模型"},
+  {k:"foreign",label:"涉及外商投资"},
+  {k:"llm",label:"提供/接入大模型服务"}
+];
+
+/* ============================ 状态与持久化 ============================ */
+const DB_NAME="ai_compliance_db", DB_VER=1;
+let db=null, currentId=null, state=null;
+
+function openDB(){return new Promise((res,rej)=>{
+  const r=indexedDB.open(DB_NAME,DB_VER);
+  r.onupgradeneeded=e=>{const d=e.target.result;
+    if(!d.objectStoreNames.contains("projects")) d.createObjectStore("projects",{keyPath:"id"});
+    if(!d.objectStoreNames.contains("blobs")) d.createObjectStore("blobs",{keyPath:"id"});
+  };
+  r.onsuccess=e=>{db=e.target.result;res(db);};
+  r.onerror=e=>rej(e);
+});}
+function tx(store,mode){return db.transaction(store,mode).objectStore(store);}
+function pget(store,key){return new Promise((res,rej)=>{const r=tx(store,"readonly").get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+function pput(store,val){return new Promise((res,rej)=>{const r=tx(store,"readwrite").put(val);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
+function pall(store){return new Promise((res,rej)=>{const r=tx(store,"readonly").getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+function pdel(store,key){return new Promise((res,rej)=>{const r=tx(store,"readwrite").delete(key);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
+
+function newState(){
+  return {
+    meta:{name:"未命名评估项目",org:"",product:"",assessor:"",date:new Date().toISOString().slice(0,10),desc:""},
+    modules:["A","B","C"],
+    scope:{public:true,opinion:false,minors:false,elderly:false,workers:false,consumers:false,news:false,deepsync:false,biometric:false,personalinfo:true,crossborder:false,openSource:false,foreign:false,llm:true},
+    answers:{}, // qid -> idx
+    track:{}, // trackId -> {item,risk,status,owner,due,note,qid}
+    evidence:{}, // evId -> {id,qid,name,type,size,addedAt}
+    createdAt:Date.now(), updatedAt:Date.now()
+  };
+}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+
+async function loadProjects(){
+  const list=await pall("projects");
+  list.sort((a,b)=>b.updatedAt-a.updatedAt);
+  return list;
+}
+async function saveCurrent(){
+  if(!state)return;
+  state.updatedAt=Date.now();
+  await pput("projects",state);
+  await refreshProjectSel();
+}
+async function refreshProjectSel(){
+  const list=await loadProjects();
+  const sel=document.getElementById("projectSel");
+  sel.innerHTML="";
+  if(list.length===0){const o=document.createElement("option");o.text="（无项目）";sel.appendChild(o);return;}
+  list.forEach(p=>{const o=document.createElement("option");o.value=p.id;o.text=p.meta.name;sel.appendChild(o);});
+  if(currentId) sel.value=currentId;
+}
+async function switchProject(id){
+  currentId=id;
+  state=await pget("projects",id);
+  if(!state)return;
+  // 选择模块自动联动 scope.llm
+  if(state.modules.includes("C")) state.scope.llm=true;
+  renderAll();
+}
+
+/* ============================ 风险计算 ============================ */
+function qApplies(q){
+  if(!q.cond) return true;
+  for(const k in q.cond){ if(!state.scope[k]) return false; }
+  return true;
+}
+function qRisk(q){
+  const aidx=state.answers[q.id];
+  if(aidx===undefined) return {risk:"未答",answered:false,skip:false};
+  const ans=ANS[aidx];
+  return {risk:ans.risk,answered:true,skip:!!ans.skip,label:ans.label};
+}
+function computeAll(){
+  const byMod={}; // mod -> {high,mid,low,none,na,unanswered}
+  const findings=[];
+  ["A","B","C"].forEach(m=>{
+    if(!state.modules.includes(m))return;
+    byMod[m]={high:0,mid:0,low:0,none:0,na:0,unanswered:0,total:0};
+    MODULES[m].categories.forEach(cat=>cat.items.forEach(q=>{
+      if(!qApplies(q))return;
+      byMod[m].total++;
+      const r=qRisk(q);
+      if(!r.answered){byMod[m].unanswered++;return;}
+      if(r.skip){byMod[m].na++;return;}
+      const key=r.risk==="高"?"high":r.risk==="中"?"mid":r.risk==="低"?"low":"none";
+      byMod[m][key]++;
+      if(r.risk==="高"||r.risk==="中"||r.risk==="低"){
+        findings.push({mod:m,cat:cat.name,qid:q.id,t:q.t,basis:q.basis,fix:q.fix,risk:r.risk,answer:r.label});
+      }
+    }));
+  });
+  const tot={high:0,mid:0,low:0,none:0,na:0,unanswered:0};
+  Object.values(byMod).forEach(b=>{["high","mid","low","none","na","unanswered"].forEach(k=>tot[k]+=b[k]);});
+  let overall="低";
+  if(tot.high>0)overall="高"; else if(tot.mid>0)overall="中"; else if(tot.low>0)overall="低";
+  if(tot.unanswered>0 && overall==="低") overall="低（含未答）";
+  return {byMod,tot,overall,findings};
+}
+
+/* ============================ 渲染 ============================ */
+function riskPill(r){return `<span class="riskpill risk-${r}">${r}</span>`;}
+function renderHome(){
+  const c=computeAll();
+  const k=document.getElementById("homeKpis");
+  k.innerHTML=`${kp(overallText(c.overall),`综合风险`,"")}
+    ${kp(c.tot.high,"高风险项","--high")}
+    ${kp(c.tot.mid,"中风险项","--mid")}
+    ${kp(c.tot.low,"低风险项","--low")}
+    ${kp(c.tot.unanswered,"未作答","--na")}`;
+}
+function kp(n,l,color){
+  const style=color?`style="color:var(${color})"`:"";
+  return `<div class="kpi"><div class="n" ${style}>${n}</div><div class="l">${l}</div></div>`;
+}
+function overallText(o){return o;}
+
+function renderInfo(){
+  if(!state)return;
+  const m=state.meta;
+  ["name","org","product","assessor","date","desc"].forEach(k=>{
+    const el=document.getElementById("i_"+k); if(el)el.value=m[k]||"";
+  });
+}
+function renderSetup(){
+  const ms=document.getElementById("modSel");
+  ms.innerHTML="";
+  ["A","B","C"].forEach(k=>{
+    const sel=state.modules.includes(k);
+    const d=document.createElement("div");
+    d.className="modcard"+(sel?" sel":"");
+    d.innerHTML=`<h3>${MODULES[k].icon} ${MODULES[k].name}</h3><p>${MODULES[k].desc}</p>`;
+    d.onclick=()=>{
+      if(state.modules.includes(k)) state.modules=state.modules.filter(x=>x!==k);
+      else state.modules.push(k);
+      if(k==="C") state.scope.llm=state.modules.includes("C");
+      d.classList.toggle("sel");
+      saveCurrent();
+    };
+    ms.appendChild(d);
+  });
+  const sg=document.getElementById("scopeGrid");
+  sg.innerHTML="";
+  SCOPE_DEFS.forEach(s=>{
+    const d=document.createElement("label");
+    d.className="tog";
+    const checked=state.scope[s.k]?"checked":"";
+    d.innerHTML=`<input type="checkbox" data-scope="${s.k}" ${checked}> <span>${s.label}</span>`;
+    sg.appendChild(d);
+  });
+}
+function renderQuiz(){
+  const sel=document.getElementById("quizMod");
+  sel.innerHTML="";
+  ["A","B","C"].forEach(k=>{
+    if(!state.modules.includes(k))return;
+    const o=document.createElement("option");o.value=k;o.text=MODULES[k].name;sel.appendChild(o);
+  });
+  if(sel.value==="") sel.value=state.modules[0];
+  renderQuizMod(sel.value);
+}
+function renderQuizMod(mod){
+  const area=document.getElementById("quizArea");
+  area.innerHTML="";
+  if(!state.modules.includes(mod)){area.innerHTML='<div class="empty">未选择该模块</div>';return;}
+  MODULES[mod].categories.forEach(cat=>{
+    const applies=cat.items.filter(q=>qApplies(q));
+    if(applies.length===0)return;
+    const h=document.createElement("div");
+    h.className="card";
+    h.innerHTML=`<h2>${MODULES[mod].name} · ${cat.name}</h2>`;
+    applies.forEach(q=>{
+      h.appendChild(buildQ(q));
+    });
+    area.appendChild(h);
+  });
+}
+function buildQ(q){
+  const r=qRisk(q);
+  const d=document.createElement("div");d.className="q";
+  let optsHtml=ANS.map((a,i)=>{
+    const ch=state.answers[q.id]===i?"checked":"";
+    return `<label class="opt ${state.answers[q.id]===i?'chosen':''}"><input type="radio" name="q_${q.id}" value="${i}" ${ch}> ${a.label}</label>`;
+  }).join("");
+  const chosenPill = r.answered? riskPill(r.risk):"";
+  d.innerHTML=`<div class="qhead"><span class="qno">${q.id}</span>
+      <div style="flex:1"><div class="qtext">${q.t}</div>
+      <div class="qmeta">依据：<span class="basis">${q.basis}</span> ${chosenPill}</div></div></div>
+    <div class="opts">${optsHtml}</div>
+    ${r.answered && r.risk!=="无" && r.risk!=="NA"?`<div class="fix"><b>整改建议：</b>${q.fix}</div>`:""}
+    <div class="ev"><div class="qmeta">证据材料（上传后形成证据链）：</div>
+      <div class="evlist" id="ev_${q.id}"></div>
+      <input type="file" multiple id="file_${q.id}" style="font-size:12px;color:var(--sub)">
+    </div>`;
+  // bind
+  d.querySelectorAll('input[type=radio]').forEach(rad=>{
+    rad.onchange=async()=>{
+      state.answers[q.id]=parseInt(rad.value);
+      await saveCurrent();
+      renderQuizMod(currentQuizMod()); renderHome(); renderRisk();
+    };
+  });
+  d.querySelector("#file_"+q.id).addEventListener("change",e=>uploadEvidence(q.id,e));
+  renderEvList(q.id,d);
+  return d;
+}
+function currentQuizMod(){const s=document.getElementById("quizMod");return s?s.value:state.modules[0];}
+
+function renderEvList(qid,root){
+  const box=(root||document).querySelector("#ev_"+qid);
+  if(!box)return;
+  box.innerHTML="";
+  Object.values(state.evidence).filter(ev=>ev.qid===qid).forEach(ev=>{
+    const tag=document.createElement("span");tag.className="evtag";
+    tag.innerHTML=`<a data-ev="${ev.id}" title="下载">📎 ${ev.name}</a> <span class="x" data-del="${ev.id}">✕</span>`;
+    box.appendChild(tag);
+  });
+  box.querySelectorAll("a[data-ev]").forEach(a=>a.onclick=()=>downloadEv(a.dataset.ev));
+  box.querySelectorAll(".x[data-del]").forEach(x=>x.onclick=()=>delEv(x.dataset.del));
+}
+async function uploadEvidence(qid,e){
+  const files=e.target.files;
+  for(const f of files){
+    const id=uid();
+    const rec={id,qid,name:f.name,type:f.type,size:f.size,addedAt:new Date().toISOString()};
+    await pput("blobs",{id,blob:f});
+    state.evidence[id]=rec;
+  }
+  await saveCurrent();
+  renderEvList(qid); renderEvidence(); renderHome();
+}
+async function downloadEv(id){
+  const rec=state.evidence[id]; if(!rec)return;
+  const b=await pget("blobs",id); if(!b)return;
+  const url=URL.createObjectURL(b.blob);
+  const a=document.createElement("a");a.href=url;a.download=rec.name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+async function delEv(id){
+  delete state.evidence[id];
+  await pdel("blobs",id);
+  await saveCurrent();
+  renderEvList("__all"); renderEvidence(); renderHome();
+}
+function renderRisk(){
+  const c=computeAll();
+  const k=document.getElementById("riskKpis");
+  if(k)k.innerHTML=`${kp(overallText(c.overall),"综合风险","")}
+    ${kp(c.tot.high,"高风险","--high")}${kp(c.tot.mid,"中风险","--mid")}
+    ${kp(c.tot.low,"低风险","--low")}${kp(c.tot.na,"不适用","--na")}`;
+  const bars=document.getElementById("riskBars");
+  if(bars){
+    bars.innerHTML=Object.keys(c.byMod).map(m=>{
+      const b=c.byMod[m];
+      const t=b.total||1;
+      const p=(x)=>Math.round(x/t*100);
+      return `<div class="card" style="margin-bottom:12px"><h3 style="margin:0 0 8px">${MODULES[m].name}</h3>
+        <div class="bar"><i style="width:${p(b.high)}%;background:var(--high)"></i><i style="width:${p(b.mid)}%;background:var(--mid)"></i><i style="width:${p(b.low)}%;background:var(--low)"></i><i style="width:${p(b.none)}%;background:var(--ok)"></i></div>
+        <div class="qmeta" style="margin-top:6px">高 ${b.high} · 中 ${b.mid} · 低 ${b.low} · 合规 ${b.none} · 不适用 ${b.na} · 未答 ${b.unanswered} / 共 ${b.total}</div></div>`;
+    }).join("");
+  }
+  const list=document.getElementById("riskList");
+  if(list){
+    if(c.findings.length===0){list.innerHTML='<div class="empty">暂未发现风险项（高/中/低）。请完成问卷。</div>';return;}
+    const order={高:0,中:1,低:2};
+    c.findings.sort((a,b)=>order[a.risk]-order[b.risk]);
+    list.innerHTML=c.findings.map(f=>`<div class="q"><div class="qhead"><span class="qno">${f.qid}</span>
+      <div style="flex:1"><div class="qtext">${f.t}</div>
+      <div class="qmeta">${MODULES[f.mod].name} · ${f.cat} ｜ 当前：<b>${f.answer}</b> ${riskPill(f.risk)} ｜ 依据：<span class="basis">${f.basis}</span></div>
+      <div class="fix"><b>整改建议：</b>${f.fix}</div></div></div></div>`).join("");
+  }
+}
+function renderTrack(){
+  const area=document.getElementById("trackArea");
+  const empty=document.getElementById("trackEmpty");
+  const items=Object.values(state.track);
+  if(items.length===0){area.innerHTML="";empty.style.display="block";return;}
+  empty.style.display="none";
+  items.sort((a,b)=>{const o={高:0,中:1,低:2};return o[a.risk]-o[b.risk];});
+  area.innerHTML=items.map(t=>{
+    const statusOpts=["待整改","整改中","已完成","已关闭"].map(s=>`<option ${t.status===s?'selected':''}>${s}</option>`).join("");
+    return `<div class="track"><span class="riskpill risk-${t.risk}">${t.risk}</span>
+      <div class="tinfo"><div class="titem">${t.item}</div>
+      <div class="tmeta">关联问题 ${t.qid||"-"} · 依据：${t.basis||"-"}</div>
+      <input class="noteinput" data-track="${t.id}" data-f="note" value="${escAttr(t.note||"")}" placeholder="整改说明/进展">
+      <div class="row" style="margin-top:6px">
+        <select class="status" data-track="${t.id}" data-f="status">${statusOpts}</select>
+        <input class="input" data-track="${t.id}" data-f="owner" value="${escAttr(t.owner||"")}" placeholder="责任人" style="width:120px">
+        <input class="input" type="date" data-track="${t.id}" data-f="due" value="${t.due||""}" style="width:150px">
+        <button class="btn danger" data-del-track="${t.id}">删除</button>
+      </div></div></div>`;
+  }).join("");
+  area.querySelectorAll("[data-track]").forEach(el=>{
+    el.onchange=async()=>{const id=el.dataset.track,f=el.dataset.f;state.track[id][f]=el.value;await saveCurrent();};
+    el.oninput=async()=>{const id=el.dataset.track,f=el.dataset.f;state.track[id][f]=el.value;await saveCurrent();};
+  });
+  area.querySelectorAll("[data-del-track]").forEach(b=>b.onclick=async()=>{delete state.track[b.dataset.delTrack];await saveCurrent();renderTrack();});
+}
+function genTrack(){
+  const c=computeAll();
+  c.findings.forEach(f=>{
+    const id=uid();
+    state.track[id]={item:f.t,risk:f.risk,status:"待整改",owner:"",due:"",note:"",qid:f.qid,basis:f.basis,fix:f.fix};
+  });
+  saveCurrent();renderTrack();
+  alert("已生成 "+c.findings.length+" 个整改跟踪项（可在「整改跟踪」中维护）。");
+}
+function renderEvidence(){
+  const area=document.getElementById("evArea");
+  if(!area)return;
+  const evs=Object.values(state.evidence);
+  if(evs.length===0){area.innerHTML='<div class="empty">尚未上传任何证据材料。</div>';return;}
+  // group by qid
+  const groups={};
+  evs.forEach(ev=>{(groups[ev.qid]=groups[ev.qid]||[]).push(ev);});
+  area.innerHTML=`<div class="card"><div class="qmeta">共 ${evs.length} 份证据，覆盖 ${Object.keys(groups).length} 个评估问题。</div></div>`+
+    Object.keys(groups).map(qid=>{
+      const q=findQ(qid);
+      const qt=q?q.t:"（问题已不适用或未找到）";
+      const tags=groups[qid].map(ev=>`<span class="evtag"><a data-ev="${ev.id}">📎 ${ev.name}</a> <span class="x" data-del="${ev.id}">✕</span></span>`).join("");
+      return `<div class="card"><div class="qhead"><span class="qno">${qid}</span><div style="flex:1"><div class="qtext">${qt}</div></div></div><div class="evlist">${tags}</div></div>`;
+    }).join("");
+  area.querySelectorAll("a[data-ev]").forEach(a=>a.onclick=()=>downloadEv(a.dataset.ev));
+  area.querySelectorAll(".x[data-del]").forEach(x=>x.onclick=()=>delEv(x.dataset.del));
+}
+function findQ(qid){
+  for(const m of ["A","B","C"]){for(const c of MODULES[m].categories){const q=c.items.find(x=>x.id===qid);if(q)return q;}}return null;
+}
+function escAttr(s){return (s||"").replace(/"/g,"&quot;").replace(/</g,"&lt;");}
+
+/* ============================ 报告（HTML，可打印） ============================ */
+function buildReport(){
+  const c=computeAll();
+  const m=state.meta;
+  const findings=c.findings.slice().sort((a,b)=>({高:0,中:1,低:2}[a.risk]-{高:0,中:1,低:2}[b.risk]));
+  const modNames={A:"推荐算法合规",B:"生成式人工智能（AIGC）合规",C:"大模型合规与备案"};
+  let html=`<div class="report"><div class="rhead">
+    <h1>AI 算法与生成式人工智能合规风险评估报告</h1>
+    <div class="meta">评估主体：${esc(m.org||"-")} ｜ 产品/服务：${esc(m.product||"-")}<br>
+    评估项目：${esc(m.name)} ｜ 负责人：${esc(m.assessor||"-")} ｜ 日期：${esc(m.date)}<br>
+    法域：中华人民共和国（大陆）｜ 生成时间：${new Date().toLocaleString("zh-CN")}</div></div>`;
+  html+=`<h2>一、评估概述</h2>
+    <p class="meta">本次评估覆盖模块：${state.modules.map(x=>modNames[x]).join("、")||"-"}。
+    评估基于《互联网信息服务算法推荐管理规定》《互联网信息服务深度合成管理规定》《生成式人工智能服务管理暂行办法》《生成式人工智能服务安全基本要求》（TC260-003）、人工智能生成合成内容标识办法及 GB 45438-2025、GB/T 45652/45654/45674-2025 等。</p>
+    <table class="tbl"><tr><th>综合风险等级</th><th>高风险</th><th>中风险</th><th>低风险</th><th>合规</th><th>不适用</th><th>未作答</th></tr>
+    <tr><td><span class="pill" style="background:#dc2626">${c.overall}</span></td><td>${c.tot.high}</td><td>${c.tot.mid}</td><td>${c.tot.low}</td><td>${c.tot.none}</td><td>${c.tot.na}</td><td>${c.tot.unanswered}</td></tr></table>`;
+  html+=`<h2>二、各模块风险分布</h2><table class="tbl"><tr><th>模块</th><th>高</th><th>中</th><th>低</th><th>合规</th><th>不适用</th><th>未答</th><th>适用题数</th></tr>`;
+  Object.keys(c.byMod).forEach(mk=>{const b=c.byMod[mk];html+=`<tr><td>${MODULES[mk].name}</td><td>${b.high}</td><td>${b.mid}</td><td>${b.low}</td><td>${b.none}</td><td>${b.na}</td><td>${b.unanswered}</td><td>${b.total}</td></tr>`;});
+  html+=`</table>`;
+  html+=`<h2>三、风险项与整改建议</h2>`;
+  if(findings.length===0)html+=`<p class="muted">未识别到高/中/低风险项。</p>`;
+  else{
+    const byMod={};
+    findings.forEach(f=>{(byMod[f.mod]=byMod[f.mod]||[]).push(f);});
+    Object.keys(byMod).forEach(mk=>{
+      html+=`<h3>${MODULES[mk].name}</h3><table class="tbl"><tr><th>编号</th><th>风险</th><th>评估问题</th><th>当前状态</th><th>法规依据</th><th>整改建议</th></tr>`;
+      byMod[mk].forEach(f=>{
+        const col={高:"#dc2626",中:"#ea580c",低:"#ca8a04"}[f.risk];
+        html+=`<tr><td>${f.qid}</td><td><span class="pill" style="background:${col}">${f.risk}</span></td><td>${esc(f.t)}</td><td>${esc(f.answer)}</td><td>${esc(f.basis)}</td><td>${esc(f.fix)}</td></tr>`;
+      });
+      html+=`</table>`;
+    });
+  }
+  html+=`<h2>四、整改跟踪计划</h2>`;
+  const tracks=Object.values(state.track);
+  if(tracks.length===0)html+=`<p class="muted">暂无整改跟踪项。请在系统中生成。</p>`;
+  else{
+    html+=`<table class="tbl"><tr><th>风险</th><th>事项</th><th>状态</th><th>责任人</th><th>时限</th><th>说明</th></tr>`;
+    tracks.forEach(t=>{const col={高:"#dc2626",中:"#ea580c",低:"#ca8a04"}[t.risk];
+      html+=`<tr><td><span class="pill" style="background:${col}">${t.risk}</span></td><td>${esc(t.item)}</td><td>${esc(t.status)}</td><td>${esc(t.owner||"-")}</td><td>${esc(t.due||"-")}</td><td>${esc(t.note||"-")}</td></tr>`;});
+    html+=`</table>`;
+  }
+  html+=`<h2>五、证据链摘要</h2>`;
+  const evs=Object.values(state.evidence);
+  if(evs.length===0)html+=`<p class="muted">尚未上传证据材料。</p>`;
+  else{
+    const groups={};evs.forEach(ev=>{(groups[ev.qid]=groups[ev.qid]||[]).push(ev);});
+    html+=`<p class="meta">共 ${evs.length} 份证据，覆盖 ${Object.keys(groups).length} 个评估问题，证据文件随评估项目本地保存。</p><table class="tbl"><tr><th>问题编号</th><th>证据名称</th><th>类型</th><th>大小</th><th>上传时间</th></tr>`;
+    evs.forEach(ev=>{html+=`<tr><td>${ev.qid}</td><td>${esc(ev.name)}</td><td>${esc(ev.type||"-")}</td><td>${fmtSize(ev.size)}</td><td>${esc(ev.addedAt)}</td></tr>`;});
+    html+=`</table>`;
+  }
+  html+=`<h2>六、声明</h2><p class="muted">本报告由合规评估系统依据填报信息与上传证据自动生成，仅供内部合规自查参考，不构成法律意见。最终合规结论应结合专业法律意见作出。</p>`;
+  html+=`</div>`;
+  document.getElementById("reportView").innerHTML=html;
+}
+function esc(s){return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fmtSize(b){if(b<1024)return b+" B";if(b<1048576)return (b/1024).toFixed(1)+" KB";return (b/1048576).toFixed(1)+" MB";}
+
+/* ============================ DOCX 导出（纯JS，无依赖） ============================ */
+function crc32(bytes){let c,t=crc32.t||(crc32.t=(function(){const ta=[];for(let n=0;n<256;n++){let cc=n;for(let k=0;k<8;k++)cc=cc&1?0xEDB88320^(cc>>>1):cc>>>1;ta[n]=cc;}return ta;})());let crc=~0;for(let i=0;i<bytes.length;i++)crc=c.t[(crc^bytes[i])&0xff]^(crc>>>8);return (~crc)>>>0;}
+function makeZip(files){
+  const enc=new TextEncoder();let parts=[],central=[],offset=0;
+  for(const f of files){
+    const name=enc.encode(f.name);const data=f.data;const crc=crc32(data);
+    const local=new Uint8Array(30+name.length+data.length);const dv=new DataView(local.buffer);
+    dv.setUint32(0,0x04034b50,true);dv.setUint16(4,20,true);dv.setUint16(6,0x0800,true);dv.setUint16(8,0,true);
+    dv.setUint16(10,0,true);dv.setUint16(12,0,true);dv.setUint32(14,crc,true);dv.setUint32(18,data.length,true);dv.setUint32(22,data.length,true);
+    dv.setUint16(26,name.length,true);dv.setUint16(28,0,true);local.set(name,30);local.set(data,30+name.length);parts.push(local);
+    const cen=new Uint8Array(46+name.length);const cv=new DataView(cen.buffer);
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);cv.setUint16(12,0,true);cv.setUint16(14,0,true);
+    cv.setUint32(16,crc,true);cv.setUint32(20,data.length,true);cv.setUint32(24,data.length,true);cv.setUint16(28,name.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,offset,true);cen.set(name,46);central.push(cen);
+    offset+=local.length;
+  }
+  const cs=central.reduce((s,c)=>s+c.length,0);const end=new Uint8Array(22);const ev=new DataView(end.buffer);
+  ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);ev.setUint32(12,cs,true);ev.setUint32(16,offset,true);ev.setUint16(20,0,true);
+  const out=new Uint8Array(offset+cs+22);let pos=0;for(const p of parts){out.set(p,pos);pos+=p.length;}for(const cc of central){out.set(cc,pos);pos+=cc.length;}out.set(end,pos);
+  return out;
+}
+function x(p){return String(p==null?"":p).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function docxPara(t,style){return `<w:p><w:pPr>${style?`<w:pStyle w:val="${style}"/>`:""}</w:pPr><w:r><w:t xml:space="preserve">${x(t)}</w:t></w:r></w:p>`;}
+function docxBullet(t){return `<w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t xml:space="preserve">${x(t)}</w:t></w:r></w:p>`;}
+function docxTable(headers,rows,widths){
+  const grid=widths.map(w=>`<w:gridCol w:w="${w}"/>`).join("");
+  function cell(t,w){return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">${x(t)}</w:t></w:r></w:p></w:tc>`;}
+  let s=`<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders>
+    <w:top w:val="single" w:sz="4" w:space="0" w:color="999999"/><w:left w:val="single" w:sz="4" w:space="0" w:color="999999"/>
+    <w:bottom w:val="single" w:sz="4" w:space="0" w:color="999999"/><w:right w:val="single" w:sz="4" w:space="0" w:color="999999"/>
+    <w:insideH w:val="single" w:sz="4" w:space="0" w:color="999999"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="999999"/></w:tblBorders></w:tblPr>
+    <w:tblGrid>${grid}</w:tblGrid>`;
+  s+=`<w:tr><w:tcPr></w:tcPr>${headers.map((h,i)=>`<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="DCE6F1"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${x(h)}</w:t></w:r></w:p></w:tc>`).join("")}</w:tr>`;
+  rows.forEach(r=>{s+=`<w:tr>${r.map((c,i)=>cell(c,widths[i])).join("")}</w:tr>`;});
+  s+=`</w:tbl>`;
+  return s;
+}
+function buildDocx(){
+  const c=computeAll();const m=state.meta;
+  const modNames={A:"推荐算法合规",B:"生成式人工智能（AIGC）合规",C:"大模型合规与备案"};
+  const findings=c.findings.slice().sort((a,b)=>({高:0,中:1,低:2}[a.risk]-{高:0,中:1,低:2}[b.risk]));
+  let body="";
+  body+=docxPara("AI 算法与生成式人工智能合规风险评估报告","Heading1");
+  body+=docxPara(`评估主体：${m.org||"-"}　产品/服务：${m.product||"-"}`,"");
+  body+=docxPara(`评估项目：${m.name}　负责人：${m.assessor||"-"}　日期：${m.date}`,"");
+  body+=docxPara(`法域：中华人民共和国（大陆）　生成时间：${new Date().toLocaleString("zh-CN")}`,"");
+  body+=docxPara("一、评估概述","Heading2");
+  body+=docxPara(`本次评估覆盖模块：${state.modules.map(x=>modNames[x]).join("、")||"-"}。评估依据《互联网信息服务算法推荐管理规定》《互联网信息服务深度合成管理规定》《生成式人工智能服务管理暂行办法》《生成式人工智能服务安全基本要求》（TC260-003）、人工智能生成合成内容标识办法及 GB 45438-2025、GB/T 45652/45654/45674-2025 等。`,"");
+  body+=docxTable(["综合风险等级","高风险","中风险","低风险","合规","不适用","未作答"],[[c.overall,c.tot.high,c.tot.mid,c.tot.low,c.tot.none,c.tot.na,c.tot.unanswered]],[2200,1100,1100,1100,1100,1100,1100]);
+  body+=docxPara("二、各模块风险分布","Heading2");
+  const modRows=Object.keys(c.byMod).map(mk=>{const b=c.byMod[mk];return [MODULES[mk].name,b.high,b.mid,b.low,b.none,b.na,b.unanswered,b.total];});
+  body+=docxTable(["模块","高","中","低","合规","不适用","未答","适用题数"],modRows,[2600,800,800,800,800,900,800,1100]);
+  body+=docxPara("三、风险项与整改建议","Heading2");
+  if(findings.length===0)body+=docxPara("未识别到高/中/低风险项。","");
+  else{
+    const byMod={};findings.forEach(f=>{(byMod[f.mod]=byMod[f.mod]||[]).push(f);});
+    Object.keys(byMod).forEach(mk=>{
+      body+=docxPara(MODULES[mk].name,"Heading3");
+      const rows=byMod[mk].map(f=>[f.qid,f.risk,f.t,f.answer,f.basis,f.fix]);
+      body+=docxTable(["编号","风险","评估问题","当前状态","法规依据","整改建议"],rows,[700,800,3200,1400,2200,3200]);
+    });
+  }
+  body+=docxPara("四、整改跟踪计划","Heading2");
+  const tracks=Object.values(state.track);
+  if(tracks.length===0)body+=docxPara("暂无整改跟踪项。","");
+  else body+=docxTable(["风险","事项","状态","责任人","时限","说明"],tracks.map(t=>[t.risk,t.item,t.status,t.owner||"-",t.due||"-",t.note||"-"]),[800,3200,1100,1100,1400,3200]);
+  body+=docxPara("五、证据链摘要","Heading2");
+  const evs=Object.values(state.evidence);
+  if(evs.length===0)body+=docxPara("尚未上传证据材料。","");
+  else{const groups={};evs.forEach(ev=>{(groups[ev.qid]=groups[ev.qid]||[]).push(ev);});
+    body+=docxPara(`共 ${evs.length} 份证据，覆盖 ${Object.keys(groups).length} 个评估问题，证据文件随评估项目本地保存。`,"");
+    body+=docxTable(["问题编号","证据名称","类型","大小","上传时间"],evs.map(ev=>[ev.qid,ev.name,ev.type||"-",fmtSize(ev.size),ev.addedAt]),[1200,3600,1600,1200,2400]);
+  }
+  body+=docxPara("六、声明","Heading2");
+  body+=docxPara("本报告由合规评估系统依据填报信息与上传证据自动生成，仅供内部合规自查参考，不构成法律意见。最终合规结论应结合专业法律意见作出。","");
+
+  const document_xml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`;
+  const styles_xml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Microsoft YaHei" w:hAnsi="Microsoft YaHei" w:eastAsia="Microsoft YaHei"/><w:sz w:val="21"/></w:rPr></w:rPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>
+<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="240" w:after="120"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="36"/><w:color w:val="1D4ED8"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="200" w:after="100"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="28"/><w:color w:val="1D4ED8"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="160" w:after="80"/><w:outlineLvl w:val="2"/></w:pPr><w:rPr><w:b/><w:sz w:val="24"/></w:rPr></w:style></w:styles>`;
+  const content_types=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
+  const rels_root=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  const doc_rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const numbering=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`;
+  const enc=new TextEncoder();
+  const files=[
+    {name:"[Content_Types].xml",data:enc.encode(content_types)},
+    {name:"_rels/.rels",data:enc.encode(rels_root)},
+    {name:"word/document.xml",data:enc.encode(document_xml)},
+    {name:"word/styles.xml",data:enc.encode(styles_xml)},
+    {name:"word/numbering.xml",data:enc.encode(numbering)},
+    {name:"word/_rels/document.xml.rels",data:enc.encode(doc_rels)}
+  ];
+  const zip=makeZip(files);
+  const blob=new Blob([zip],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=(m.name||"AI合规评估报告")+".docx";a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+}
+
+/* ============================ 事件绑定 ============================ */
+function renderAll(){renderInfo();renderSetup();renderQuiz();renderHome();renderRisk();renderTrack();renderEvidence();if(document.getElementById("reportView").innerHTML)buildReport();}
+
+function init(){
+  openDB().then(async()=>{
+    let list=await loadProjects();
+    if(list.length===0){state=newState();state.id=uid();await pput("projects",state);}
+    else{state=list[0];if(state.modules.includes("C"))state.scope.llm=true;}
+    currentId=state.id;
+    await refreshProjectSel();
+    bindUI();
+    renderAll();
+  }).catch(e=>alert("数据库初始化失败："+e));
+}
+function bindUI(){
+  document.querySelectorAll(".navitem").forEach(n=>n.onclick=()=>{
+    document.querySelectorAll(".navitem").forEach(x=>x.classList.remove("active"));
+    n.classList.add("active");
+    document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+    document.getElementById(n.dataset.sec).classList.add("active");
+    if(n.dataset.sec==="secRisk")renderRisk();
+    if(n.dataset.sec==="secTrack")renderTrack();
+    if(n.dataset.sec==="secEvidence")renderEvidence();
+    if(n.dataset.sec==="secHome")renderHome();
+  });
+  document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{document.querySelector(`.navitem[data-sec="${b.dataset.go}"]`).click();});
+  document.getElementById("projectSel").onchange=e=>switchProject(e.target.value);
+  document.getElementById("btnNew").onclick=async()=>{
+    if(!confirm("新建一个评估项目？当前项目已自动保存。"))return;
+    state=newState();state.id=uid();state.name="新评估项目 "+new Date().toLocaleDateString("zh-CN");await pput("projects",state);currentId=state.id;await refreshProjectSel();renderAll();
+  };
+  document.getElementById("btnTheme").onclick=()=>{
+    const cur=document.documentElement.getAttribute("data-theme");
+    document.documentElement.setAttribute("data-theme",cur==="light"?"dark":"light");
+  };
+  document.getElementById("btnSaveInfo").onclick=async()=>{
+    ["name","org","product","assessor","date","desc"].forEach(k=>{state.meta[k]=document.getElementById("i_"+k).value;});
+    await saveCurrent();renderHome();alert("已保存项目信息。");
+  };
+  document.getElementById("btnSaveSetup").onclick=async()=>{
+    document.querySelectorAll("[data-scope]").forEach(cb=>{state.scope[cb.dataset.scope]=cb.checked;});
+    if(state.modules.includes("C"))state.scope.llm=true;
+    await saveCurrent();renderQuiz();renderHome();renderRisk();alert("适用范围已保存，问卷已刷新。");
+  };
+  document.getElementById("quizMod").onchange=e=>renderQuizMod(e.target.value);
+  document.getElementById("btnGenTrack").onclick=genTrack;
+  document.getElementById("btnBuildReport").onclick=buildReport;
+  document.getElementById("btnExportPdf").onclick=()=>{buildReport();window.print();};
+  document.getElementById("btnExportDocx").onclick=buildDocx;
+}
+document.documentElement.setAttribute("data-theme","dark");
+init();
+</script>
+</body>
+</html>
